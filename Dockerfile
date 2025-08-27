@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql mbstring zip exif pcntl gd bcmath tokenizer ctype dom \
     && rm -rf /var/lib/apt/lists/*
 
-# Habilita mod_rewrite y otros módulos necesarios
+# Habilita mod_rewrite y headers
 RUN a2enmod rewrite headers
 
 # Corrige DocumentRoot para servir desde /public
@@ -29,17 +29,17 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Establece directorio de trabajo
 WORKDIR /var/www/html
 
-# Copia composer.json (y composer.lock si existe)
+# Copia composer.json y composer.lock (si existe)
 COPY composer.json ./
 COPY composer.lock ./ || echo "No composer.lock found, se generará durante install"
 
-# Instala dependencias PHP
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-*
+# Instala dependencias PHP y asegura la generación de vendor/
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-* --prefer-dist --no-scripts
 
 # Copia todo el código fuente
 COPY . .
 
-# Copia el .htaccess optimizado
+# Copia el .htaccess optimizado en public/
 COPY .htaccess ./public/.htaccess
 
 # Ajusta permisos correctos para Apache
