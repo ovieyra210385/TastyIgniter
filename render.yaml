@@ -7,3 +7,33 @@ services:
     region: oregon
     dockerfilePath: ./Dockerfile
     plan: free
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        value: https://wolf-kitchen.onrender.com
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: wolf-db
+          property: host
+      - key: DB_DATABASE
+        fromDatabase:
+          name: wolf-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: wolf-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: wolf-db
+          property: password
+
+databases:
+  - name: wolf-db
+    plan: free
+    region: oregon
