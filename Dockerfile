@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
 # Habilita mod_rewrite
 RUN a2enmod rewrite
 
+# Establece DocumentRoot en /public
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+
 # Instala Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -31,3 +34,6 @@ WORKDIR /var/www/html
 
 # Expone el puerto
 EXPOSE 80
+
+# Comando de inicio
+CMD ["apache2-foreground"]
