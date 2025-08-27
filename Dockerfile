@@ -1,7 +1,7 @@
 # Imagen base con Apache y PHP 8.2
 FROM php:8.2-apache
 
-# Instala extensiones necesarias
+# Instala extensiones necesarias (sin libonig-dev porque ya no se usa en PHP 8.1+)
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg62-turbo-dev \
