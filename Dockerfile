@@ -1,18 +1,19 @@
 # Imagen base con Apache y PHP 8.2
-FROM php:8.0.3-apache
+FROM php:8.2-apache
 
 # Instala extensiones necesarias
 RUN apt-get update && apt-get install -y \
     libpng-dev \
-    libjpeg-dev \
-    libonig-dev \
+    libjpeg62-turbo-dev \
     libxml2-dev \
+    libzip-dev \
+    zlib1g-dev \
     zip \
     unzip \
     git \
     curl \
-    libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl gd
 
 # Habilita mod_rewrite para Laravel/TastyIgniter
 RUN a2enmod rewrite
