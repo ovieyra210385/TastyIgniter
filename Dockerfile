@@ -28,21 +28,16 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Establece el directorio de trabajo
 WORKDIR /var/www/html
 
-# Copia composer.json primero
+# Copia solo composer.json
 COPY composer.json ./
 
-# Copia composer.lock solo si existe (para aprovechar caché)
-# Nota: Render requiere que ambos archivos existan si usas COPY de ambos
-# Por eso se maneja la copia condicional con un pequeño truco
-COPY composer.lock ./ || echo "No composer.lock found, se generará durante install"
-
-# Instala dependencias PHP
+# Instala dependencias PHP y genera composer.lock si no existe
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-*
 
 # Copia el resto del código fuente
 COPY . .
 
-# Ajusta permisos
+# Ajusta permisos para Apache
 RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type f -exec chmod 644 {} \; \
     && find /var/www/html -type d -exec chmod 755 {} \;
