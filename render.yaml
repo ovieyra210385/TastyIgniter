@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: wolf-kitchen
+    env: docker
+    repo: https://github.com/ovieyra210385/TastyIgniter
+    branch: 4.x
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    plan: free
