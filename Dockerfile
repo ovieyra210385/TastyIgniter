@@ -1,5 +1,5 @@
-# Imagen base con Apache y PHP 8.2
-FROM php:8.2-apache
+# Imagen base con Apache y PHP 8.3 (requerido por TastyIgniter 4.x)
+FROM php:8.3-apache
 
 # Instala dependencias del sistema necesarias para PHP y Composer
 RUN apt-get update && apt-get install -y \
@@ -12,11 +12,12 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     curl \
+    cron \
     && docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl gd \
+    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl gd bcmath tokenizer ctype dom \
     && rm -rf /var/lib/apt/lists/*
 
-# Habilita mod_rewrite para Laravel/TastyIgniter
+# Habilita mod_rewrite para TastyIgniter
 RUN a2enmod rewrite
 
 # Corrige DocumentRoot para servir desde /public
@@ -28,21 +29,30 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Establece el directorio de trabajo
 WORKDIR /var/www/html
 
-# Copia solo composer.json
+# Copia composer.json (y composer.lock si existe)
 COPY composer.json ./
+COPY composer.lock ./ || echo "No composer.lock found, se generará durante install"
 
-# Instala dependencias PHP y genera composer.lock si no existe
+# Instala dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-*
 
-# Copia el resto del código fuente
+# Copia todo el código fuente
 COPY . .
 
-# Ajusta permisos para Apache
+# Ajusta permisos
 RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type f -exec chmod 644 {} \; \
     && find /var/www/html -type d -exec chmod 755 {} \;
 
-# Expone el puerto 80
+# Ejecuta instalación de TastyIgniter en modo no interactivo
+RUN php artisan igniter:install --no-interaction || echo "TastyIgniter ya instalado o se requiere revisión manual"
+
+# Configura cron para scheduler
+RUN echo "* * * * * www-data php /var/www/html/artisan schedule:run >> /dev/null 2>&1" >> /etc/cron.d/tastyigniter \
+    && chmod 0644 /etc/cron.d/tastyigniter \
+    && crontab -u www-data /etc/cron.d/tastyigniter
+
+# Expone el puerto 80 (Render lo mapea automáticamente)
 EXPOSE 80
 
 # Comando de inicio
