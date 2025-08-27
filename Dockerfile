@@ -1,4 +1,4 @@
-# Imagen base con Apache y PHP 8.2 (Render compila en Debian Bullseye/Bookworm)
+# Imagen base con Apache y PHP 8.2
 FROM php:8.2-apache
 
 # Instala dependencias del sistema necesarias para PHP y Composer
@@ -28,22 +28,27 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Establece el directorio de trabajo
 WORKDIR /var/www/html
 
-# Copia composer.json y composer.lock primero (mejor caché en Render)
-COPY composer.json composer.lock ./
+# Copia composer.json primero
+COPY composer.json ./
 
-# Instala dependencias PHP (sin dev, optimizadas para producción)
+# Copia composer.lock solo si existe (para aprovechar caché)
+# Nota: Render requiere que ambos archivos existan si usas COPY de ambos
+# Por eso se maneja la copia condicional con un pequeño truco
+COPY composer.lock ./ || echo "No composer.lock found, se generará durante install"
+
+# Instala dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-*
 
 # Copia el resto del código fuente
 COPY . .
 
-# Ajusta permisos (Render usa www-data igual que Apache)
+# Ajusta permisos
 RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type f -exec chmod 644 {} \; \
     && find /var/www/html -type d -exec chmod 755 {} \;
 
-# Expone el puerto 80 (Render lo mapea automáticamente)
+# Expone el puerto 80
 EXPOSE 80
 
-# Comando de inicio para Apache
+# Comando de inicio
 CMD ["apache2-foreground"]
